@@ -56,7 +56,9 @@ export function BookingProvider({ children }) {
     const patch = (p) => setState((s) => ({ ...s, ...p }));
     return {
       selectEvent: (eventId) =>
-        patch({ eventId, zoneId: null, seats: [], orderId: null }),
+        // เริ่ม flow ใหม่ทุกครั้ง = ล้างเวลาถือบัตรเดิม เพื่อให้เริ่มนับ 10:00 ใหม่
+        // (หน้า seats/cart/payment ไม่เรียก selectEvent จึงนับต่อเนื่องในออเดอร์เดียวกัน)
+        patch({ eventId, zoneId: null, seats: [], orderId: null, holdExpiresAt: null }),
       selectZone: (zoneId) => patch({ zoneId, seats: [] }),
       toggleSeat: (id) =>
         setState((s) => {
