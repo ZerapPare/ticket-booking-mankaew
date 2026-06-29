@@ -1,26 +1,77 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Mankaew — design tokens (from dist/docs/README.md)
+  Theme: white minimal, purple accent (#7c3aed)
+  Fonts: Anuphan (body/UI), Space Mono (labels/codes) — loaded via next/font in app/layout.jsx
+*/
+@theme {
+  /* accent / primary */
+  --color-accent: #7c3aed;
+  --color-accent-dark: #5b21b6;
+  --color-accent-soft: #f5f3ff;
+  --color-accent-soft-2: #ede9fe;
+  --color-accent-soft-3: #faf5ff;
+  --color-accent-border: #ddd6fe;
+  --color-accent-border-2: #c4b5fd;
+
+  /* text */
+  --color-ink: #18181b;
+  --color-muted: #3f3f46;
+  --color-faint: #71717a;
+  --color-fainter: #a1a1aa;
+
+  /* surfaces */
+  --color-bg-soft: #fafafa;
+  --color-surface: #f4f4f5;
+  --color-line: #ececee;
+  --color-line-2: #e4e4e7;
+  --color-dark: #18181b;
+
+  /* status */
+  --color-success: #16a34a;
+  --color-success-2: #22c55e;
+  --color-success-bg: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-2: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-2: #ef4444;
+  --color-danger-bg: #fef2f2;
+
+  /* zone colors */
+  --color-zone-vip: #7c3aed;
+  --color-zone-a: #3b82f6;
+  --color-zone-b: #ec4899;
+  --color-zone-c: #10b981;
+  --color-zone-d: #f59e0b;
+
+  /* fonts (variables provided by next/font) */
+  --font-sans: var(--font-anuphan), sans-serif;
+  --font-mono: var(--font-space-mono), monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-padding-top: 88px; /* offset for sticky header */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: #ffffff;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #ddd6fe;
+}
+
+/* thin scrollbar for the seat map overflow area */
+.seatmap-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.seatmap-scroll::-webkit-scrollbar-thumb {
+  background: #e4e4e7;
+  border-radius: 999px;
 }
