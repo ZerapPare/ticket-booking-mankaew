@@ -53,7 +53,7 @@ export default function OrganizerEvents() {
                 </div>
               </div>
               <Link
-                href="/organizer/report"
+                href={`/organizer/report/${e.id}`}
                 className="text-right text-[13px] font-medium text-accent"
               >
                 จัดการ →
