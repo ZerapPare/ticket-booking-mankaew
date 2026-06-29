@@ -6,7 +6,7 @@ import KeyVisual from "@/components/key-visual";
 import { EVENT_FILTERS } from "@/lib/mock-data";
 import { formatBaht } from "@/lib/format";
 
-// Maps a filter chip to a predicate. Chips without data (กีฬา/โชว์/สัปดาห์นี้)
+// Maps a filter chip to a predicate. Chips without data (สัปดาห์นี้)
 // fall back to "show all" for the mock.
 function matches(filter, ev) {
   if (filter === "คอนเสิร์ต" || filter === "เทศกาล") return ev.cat === filter;

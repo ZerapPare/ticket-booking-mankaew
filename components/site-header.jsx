@@ -10,8 +10,6 @@ export default function SiteHeader() {
         <nav className="hidden items-center gap-[30px] text-[15px] text-muted md:flex">
           <Link href="/events" className="hover:text-ink">คอนเสิร์ต</Link>
           <Link href="/events" className="hover:text-ink">เทศกาล</Link>
-          <Link href="/events" className="hover:text-ink">กีฬา</Link>
-          <Link href="/events" className="hover:text-ink">โชว์</Link>
         </nav>
       </div>
       <div className="flex items-center gap-[18px]">
