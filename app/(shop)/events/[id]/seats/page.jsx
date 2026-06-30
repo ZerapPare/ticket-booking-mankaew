@@ -1,18 +1,15 @@
 import { notFound } from "next/navigation";
 import SeatSelection from "@/components/seat-selection";
-import { EVENTS, getEvent } from "@/lib/mock-data";
+import { getEventDetail } from "@/lib/data/events";
 
-export function generateStaticParams() {
-  return EVENTS.map((e) => ({ id: e.id }));
-}
-
+export const dynamic = "force-dynamic";
 export const metadata = { title: "เลือกที่นั่ง — Mankaew" };
 
 export default async function SeatsPage({ params }) {
   const { id } = await params;
-  const event = getEvent(id);
+  const event = await getEventDetail(id);
   if (!event) notFound();
-  // pass only serializable fields to the client component
+  // ผังที่นั่งยังเป็น mock ZONES ในขั้นนี้ — ใช้หัวข้ออีเวนต์จริง
   const { id: eid, title, date, venue, grad } = event;
   return <SeatSelection event={{ id: eid, title, date, venue, grad }} />;
 }

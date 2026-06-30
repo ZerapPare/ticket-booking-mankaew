@@ -1,13 +1,10 @@
 import EventList from "@/components/event-list";
-import { EVENTS } from "@/lib/mock-data";
+import { listPublishedEvents } from "@/lib/data/events";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "อีเวนต์ทั้งหมด — Mankaew" };
 
-export default function EventsPage() {
-  // Fill the grid a bit (mock). Real data comes from Supabase `events`.
-  const list = [...EVENTS, ...EVENTS.slice(1)].map((ev, i) => ({
-    ...ev,
-    key: `${ev.id}-${i}`,
-  }));
-  return <EventList events={list} />;
+export default async function EventsPage() {
+  const events = await listPublishedEvents();
+  return <EventList events={events} />;
 }

@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { auth } from "@/auth";
+import { Logo } from "@/components/logo";
 
-// Shared sticky header (chrome) for the buyer browsing/checkout routes.
-// Search is a link to the list for now; wire to real search later.
-export default function SiteHeader() {
+// Sticky header — รู้สถานะ session (server component)
+export default async function SiteHeader() {
+  const session = await auth();
+  const user = session?.user;
+  const role = user?.role;
+
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-line bg-white/[.86] px-12 py-[18px] backdrop-blur-[10px]">
       <div className="flex items-center gap-11">
@@ -19,27 +24,40 @@ export default function SiteHeader() {
         >
           <span aria-hidden>⌕</span> ค้นหาศิลปิน, อีเวนต์
         </Link>
-        <Link href="/account" className="text-[15px] text-muted hover:text-ink">
-          ตั๋วของฉัน
-        </Link>
-        <Link
-          href="/login"
-          className="rounded-full bg-accent px-5 py-[9px] text-[14px] font-semibold text-white transition-colors hover:bg-accent-dark"
-        >
-          เข้าสู่ระบบ
-        </Link>
+
+        {role === "admin" && (
+          <Link href="/admin" className="text-[15px] text-muted hover:text-ink">
+            Admin
+          </Link>
+        )}
+        {(role === "organizer" || role === "admin") && (
+          <Link
+            href="/organizer"
+            className="text-[15px] text-muted hover:text-ink"
+          >
+            หลังบ้าน
+          </Link>
+        )}
+
+        {user ? (
+          <Link
+            href="/account"
+            className="flex items-center gap-2 text-[15px] text-muted hover:text-ink"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft-2 text-[13px] font-semibold text-accent">
+              {(user.name || user.email || "?").charAt(0).toUpperCase()}
+            </span>
+            ตั๋วของฉัน
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="rounded-full bg-accent px-5 py-[9px] text-[14px] font-semibold text-white transition-colors hover:bg-accent-dark"
+          >
+            เข้าสู่ระบบ
+          </Link>
+        )}
       </div>
     </header>
-  );
-}
-
-export function Logo({ className = "" }) {
-  return (
-    <Link
-      href="/"
-      className={`font-mono text-[22px] font-bold tracking-[1px] ${className}`}
-    >
-      Mankaew<span className="text-accent">.</span>
-    </Link>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/site-header";
+import { Logo } from "@/components/logo";
 import { useBooking } from "@/lib/booking-context";
 import { QUEUE_TOTAL } from "@/lib/mock-data";
 

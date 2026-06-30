@@ -1,8 +1,14 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import DashboardSidebar from "@/components/dashboard/dashboard-sidebar";
 import { ORG_NAV, ORG_PROFILE } from "@/lib/organizer-mock";
 
-// TODO (auth phase): guard this layout with auth() — require role organizer/admin.
-export default function OrganizerLayout({ children }) {
+export default async function OrganizerLayout({ children }) {
+  const session = await auth();
+  const role = session?.user?.role;
+  if (!session?.user) redirect("/login?callbackUrl=/organizer");
+  if (role !== "organizer" && role !== "admin") redirect("/");
+
   return (
     <div className="flex min-h-screen bg-bg-soft">
       <DashboardSidebar

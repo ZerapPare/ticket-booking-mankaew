@@ -1,21 +1,20 @@
 import { notFound } from "next/navigation";
 import BuyButton from "@/components/buy-button";
-import { EVENTS, getEvent, ZONES, LINEUP } from "@/lib/mock-data";
+import { getEventDetail } from "@/lib/data/events";
+import { LINEUP } from "@/lib/mock-data";
 import { formatBaht } from "@/lib/format";
 
-export function generateStaticParams() {
-  return EVENTS.map((e) => ({ id: e.id }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
-  const ev = getEvent(id);
+  const ev = await getEventDetail(id);
   return { title: ev ? `${ev.title} — Mankaew` : "ไม่พบอีเวนต์ — Mankaew" };
 }
 
 export default async function EventDetailPage({ params }) {
   const { id } = await params;
-  const event = getEvent(id);
+  const event = await getEventDetail(id);
   if (!event) notFound();
 
   return (
@@ -57,7 +56,7 @@ export default async function EventDetailPage({ params }) {
         <div>
           <h2 className="mb-[14px] text-[22px] font-semibold">เกี่ยวกับงาน</h2>
           <p className="mb-9 text-[16px] leading-[1.7] text-muted">
-            {event.desc}
+            {event.desc || "—"}
           </p>
 
           <h2 className="mb-[18px] text-[22px] font-semibold">ไลน์อัพศิลปิน</h2>
@@ -74,7 +73,7 @@ export default async function EventDetailPage({ params }) {
 
           <h2 className="mb-[18px] text-[22px] font-semibold">ราคาบัตร</h2>
           <div className="overflow-hidden rounded-[12px] border border-[#eee]">
-            {ZONES.map((z) => (
+            {event.zones.map((z) => (
               <div
                 key={z.id}
                 className="flex items-center justify-between border-b border-surface px-5 py-4 last:border-b-0"
