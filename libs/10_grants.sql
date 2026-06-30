@@ -20,3 +20,18 @@ grant select on
   public.ticket_types,
   public.seats
 to anon, authenticated;
+
+-- =============================================================
+-- service_role (กุญแจ server) ต้องมีสิทธิ์เต็มทุกตาราง/sequence/function
+-- บาง Supabase project ไม่ได้ grant ให้อัตโนมัติ -> server query โดน 42501 ทุกตาราง
+-- (service_role ใช้ฝั่ง server เท่านั้น จึงให้สิทธิ์เต็มได้)
+-- =============================================================
+grant usage on schema public to service_role;
+grant all privileges on all tables in schema public to service_role;
+grant all privileges on all sequences in schema public to service_role;
+grant all privileges on all functions in schema public to service_role;
+
+-- เผื่อ object ที่สร้างใหม่ภายหลัง
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on sequences to service_role;
+alter default privileges in schema public grant all on functions to service_role;
