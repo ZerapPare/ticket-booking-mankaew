@@ -10,7 +10,7 @@ export const metadata = { title: "เลือกที่นั่ง — Manka
 export default async function SeatsPage({ params }) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user) redirect(`/login?callbackUrl=/events/${id}/seats`);
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/events/${id}/seats`);
 
   const event = await getEventDetail(id);
   if (!event) notFound();

@@ -8,7 +8,7 @@ export const metadata = { title: "บัญชีของฉัน — Mankaew"
 
 export default async function AccountPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/account");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/account");
   const tickets = await getMyTickets(session.user.id);
   return <AccountView user={session.user} tickets={tickets} />;
 }

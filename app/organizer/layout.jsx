@@ -6,7 +6,7 @@ import { ORG_NAV, ORG_PROFILE } from "@/lib/organizer-mock";
 export default async function OrganizerLayout({ children }) {
   const session = await auth();
   const role = session?.user?.role;
-  if (!session?.user) redirect("/login?callbackUrl=/organizer");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/organizer");
   if (role !== "organizer" && role !== "admin") redirect("/");
 
   return (

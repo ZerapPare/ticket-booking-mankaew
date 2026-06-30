@@ -210,7 +210,9 @@ begin
         serial_no, qr_code, seat_label, status
       ) values (
         r.ticket_type_id, v_txn_id, p_buyer_id,
-        v_serial, encode(gen_random_bytes(16), 'hex'), r.seat_label, 'reserved'
+        v_serial,
+        replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''),
+        r.seat_label, 'reserved'
       )
       returning id
     )

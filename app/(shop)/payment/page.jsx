@@ -11,7 +11,7 @@ export const metadata = { title: "ชำระเงิน — Mankaew" };
 export default async function PaymentPage({ searchParams }) {
   const { txn } = await searchParams;
   const session = await auth();
-  if (!session?.user) redirect("/login?callbackUrl=/events");
+  if (!session?.user?.id) redirect("/login?callbackUrl=/events");
 
   const t = txn ? await getTransaction(txn, session.user.id) : null;
   if (!t) redirect("/events");

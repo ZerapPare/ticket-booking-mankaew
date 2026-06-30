@@ -58,7 +58,7 @@ begin
       ticket_type_id, transaction_id, owner_id, serial_no, qr_code, seat_label, status
     ) values (
       p_ticket_type_id, v_txn_id, p_buyer_id, v_serial,
-      encode(gen_random_bytes(16), 'hex'),
+      replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', ''),
       case when p_seat_labels is not null and array_length(p_seat_labels, 1) >= i
            then p_seat_labels[i] else null end,
       'reserved'
