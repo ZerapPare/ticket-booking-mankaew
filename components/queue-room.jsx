@@ -15,7 +15,7 @@ import { QUEUE_TOTAL } from "@/lib/mock-data";
 */
 export default function QueueRoom({ eventId, eventTitle }) {
   const router = useRouter();
-  const { eventId: current, selectEvent } = useBooking();
+  const { eventId: current, selectEvent, restartHold } = useBooking();
   const [pos, setPos] = useState(QUEUE_TOTAL);
   const [ready, setReady] = useState(false);
   const timer = useRef(null);
@@ -40,6 +40,12 @@ export default function QueueRoom({ eventId, eventTitle }) {
     }, 900);
     return () => clearInterval(timer.current);
   }, []);
+
+  // ถึงคิวแล้ว -> เริ่มจับเวลาถือบัตร 10:00 ใหม่สดทุกครั้ง
+  useEffect(() => {
+    if (ready) restartHold();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   const pct = Math.min(100, Math.round((1 - pos / QUEUE_TOTAL) * 100));
   const etaSec = Math.max(0, Math.round((pos / 220) * 0.9));
