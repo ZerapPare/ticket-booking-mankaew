@@ -1,29 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { useBooking } from "@/lib/booking-context";
-import { getEvent, getZone } from "@/lib/mock-data";
-
-// ตั๋วตัวอย่าง (mock) — ต่อ Supabase (tickets/transactions) ในสเต็ปจองจริง
-const MY_TICKETS = [
-  { eventId: "neon", zoneId: "vip", seats: ["A-1", "A-2"], orderId: "4821" },
-  { eventId: "kwave", zoneId: "a", seats: ["B-7"], orderId: "3310" },
-];
 
 const TABS = ["ตั๋วของฉัน", "ประวัติการซื้อ", "ตั้งค่าบัญชี"];
 
-export default function AccountView({ user }) {
-  const router = useRouter();
-  const { loadTicket } = useBooking();
+export default function AccountView({ user, tickets }) {
+  const { upcoming = [], past = [] } = tickets || {};
 
   const displayName = user?.name || user?.email || "ผู้ใช้";
   const initial = displayName.charAt(0).toUpperCase();
-
-  function openTicket(t) {
-    loadTicket(t);
-    router.push(`/tickets/${t.orderId}`);
-  }
 
   return (
     <div className="mx-auto max-w-[1080px] px-12 py-12">
@@ -65,59 +51,75 @@ export default function AccountView({ user }) {
       <div className="mb-[14px] font-mono text-[13px] tracking-[1px] text-fainter">
         กำลังจะมาถึง
       </div>
-      <div className="mb-9 flex flex-col gap-[14px]">
-        {MY_TICKETS.map((t) => {
-          const ev = getEvent(t.eventId);
-          const zone = getZone(t.zoneId);
-          if (!ev || !zone) return null;
-          return (
-            <button
+      {upcoming.length > 0 ? (
+        <div className="mb-9 flex flex-col gap-[14px]">
+          {upcoming.map((t) => (
+            <Link
               key={t.orderId}
-              onClick={() => openTicket(t)}
+              href={`/tickets/${t.orderId}`}
               className="flex items-center gap-5 rounded-[14px] border border-[#eee] p-5 text-left transition-colors hover:border-accent-border"
             >
               <div
                 className="aspect-[3/4] w-16 flex-shrink-0 rounded-[8px]"
-                style={{ background: ev.grad }}
+                style={{ background: t.grad }}
               />
               <div className="flex-1">
-                <div className="mb-1 text-[17px] font-semibold">{ev.title}</div>
+                <div className="mb-1 text-[17px] font-semibold">{t.title}</div>
                 <div className="text-[13px] text-faint">
-                  {ev.date} • {ev.venue}
+                  {t.date} • {t.venue}
                 </div>
               </div>
               <div className="text-right">
                 <div className="mb-[6px] text-[13px] text-faint">
-                  {zone.name} • {t.seats.length} ใบ
+                  {t.zoneName} • {t.qty} ใบ
                 </div>
                 <span className="rounded-full bg-success-bg px-3 py-[5px] text-[12px] font-semibold text-[#22c55e]">
                   พร้อมใช้งาน
                 </span>
               </div>
               <div className="text-[13px] font-medium text-accent">ดูตั๋ว →</div>
-            </button>
-          );
-        })}
-      </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <div className="mb-9 rounded-[14px] border border-dashed border-[#e4e4e7] p-8 text-center text-[14px] text-fainter">
+          ยังไม่มีตั๋ว —{" "}
+          <Link href="/events" className="font-medium text-accent">
+            เลือกซื้ออีเวนต์
+          </Link>
+        </div>
+      )}
 
       <div className="mb-[14px] font-mono text-[13px] tracking-[1px] text-fainter">
         ที่ผ่านมา
       </div>
-      <div className="flex items-center gap-5 rounded-[14px] border border-[#f0f0f1] p-5 opacity-65">
-        <div
-          className="aspect-[3/4] w-16 flex-shrink-0 rounded-[8px]"
-          style={{ background: "linear-gradient(160deg,#e5e5e5,#f5f5f5)" }}
-        />
-        <div className="flex-1">
-          <div className="mb-1 text-[17px] font-semibold">
-            LUKTHUNG LEGENDS NIGHT
-          </div>
-          <div className="text-[13px] text-faint">12 ธ.ค. 2025 • ธันเดอร์โดม</div>
+      {past.length > 0 ? (
+        <div className="flex flex-col gap-[14px]">
+          {past.map((t) => (
+            <Link
+              key={t.orderId}
+              href={`/tickets/${t.orderId}`}
+              className="flex items-center gap-5 rounded-[14px] border border-[#f0f0f1] p-5 opacity-65 transition-opacity hover:opacity-100"
+            >
+              <div
+                className="aspect-[3/4] w-16 flex-shrink-0 rounded-[8px]"
+                style={{ background: t.grad }}
+              />
+              <div className="flex-1">
+                <div className="mb-1 text-[17px] font-semibold">{t.title}</div>
+                <div className="text-[13px] text-faint">
+                  {t.date} • {t.venue}
+                </div>
+              </div>
+              <span className="rounded-full bg-surface px-3 py-[5px] text-[12px] text-faint">
+                จบงานแล้ว
+              </span>
+            </Link>
+          ))}
         </div>
-        <span className="rounded-full bg-surface px-3 py-[5px] text-[12px] text-faint">
-          จบงานแล้ว
-        </span>
-      </div>
+      ) : (
+        <div className="text-[14px] text-fainter">— ไม่มีประวัติ</div>
+      )}
     </div>
   );
 }

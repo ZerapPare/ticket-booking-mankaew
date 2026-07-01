@@ -1,30 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { useBooking } from "@/lib/booking-context";
-import { getEvent } from "@/lib/mock-data";
 import { seatLabel, sortSeats } from "@/lib/format";
 
-export default function ETicket({ orderId }) {
-  const router = useRouter();
-  const { hydrated, eventId, zone, qty, seats } = useBooking();
-  const event = getEvent(eventId);
-
-  useEffect(() => {
-    if (hydrated && !event) router.replace("/account");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
-
-  if (!hydrated || !event) return null;
+// นำเสนอบัตรอิเล็กทรอนิกส์จากข้อมูลจริง (getOrder) — ไม่มี state ของตัวเอง
+export default function ETicket({ order }) {
+  const { event, zoneName, seats, qty, serials, qr } = order;
 
   const seatText =
-    seats.length > 0
-      ? sortSeats(seats).map(seatLabel).join(", ")
-      : `${qty || 1} ใบ`;
-  const code = `MKW-2026-${orderId}`;
+    seats.length > 0 ? sortSeats(seats).map(seatLabel).join(", ") : `${qty} ใบ`;
+  const code = serials[0] || qr;
 
   return (
     <div
@@ -35,9 +21,9 @@ export default function ETicket({ orderId }) {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#22c55e] text-[30px] text-white">
           ✓
         </div>
-        <h1 className="mb-2 text-[30px] font-bold">ชำระเงินสำเร็จ!</h1>
+        <h1 className="mb-2 text-[30px] font-bold">บัตรพร้อมใช้งาน</h1>
         <p className="mb-8 text-[15px] text-faint">
-          บัตรของคุณพร้อมแล้ว แสดง QR นี้ที่หน้างานเพื่อเข้าชม
+          แสดง QR นี้ที่หน้างานเพื่อเข้าชม
         </p>
 
         <div
@@ -69,7 +55,7 @@ export default function ETicket({ orderId }) {
             <div className="flex-1">
               <TicketLabel>โซน</TicketLabel>
               <div className="mb-[14px] text-[16px] font-semibold">
-                {zone ? zone.name : "—"}
+                {zoneName || "—"}
               </div>
               <TicketLabel>ที่นั่ง</TicketLabel>
               <div className="font-mono text-[15px] font-semibold">
@@ -86,8 +72,8 @@ export default function ETicket({ orderId }) {
 
           <div className="px-6 py-7 text-center">
             <div className="mx-auto mb-[14px] w-fit rounded-[12px] border border-line-2 bg-white p-3">
-              {/* Real QR — encodes the ticket serial for gate check-in */}
-              <QRCodeSVG value={code} size={150} level="M" />
+              {/* Real QR — encodes the ticket's qr_code for gate check-in */}
+              <QRCodeSVG value={qr} size={150} level="M" />
             </div>
             <div className="font-mono text-[13px] tracking-[1px] text-faint">
               {code}

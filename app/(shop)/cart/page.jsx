@@ -5,46 +5,58 @@ import { useRouter } from "next/navigation";
 import CheckoutStepper from "@/components/checkout-stepper";
 import { useBooking } from "@/lib/booking-context";
 import { useCountdown } from "@/lib/use-countdown";
-import { getEvent, HOLD_SECONDS } from "@/lib/mock-data";
+import { cancelOrderAction } from "@/lib/actions/booking";
 import { formatBaht, formatClock, seatLabel, sortSeats } from "@/lib/format";
 
 export default function CartPage() {
   const router = useRouter();
   const {
     hydrated,
-    eventId,
+    event,
     zone,
     qty,
     seats,
+    isGa,
     subtotal,
     fee,
     total,
+    txnId,
     holdExpiresAt,
     clearHold,
   } = useBooking();
 
-  const event = getEvent(eventId);
   const remaining = useCountdown(holdExpiresAt);
 
-  // no valid selection (e.g. direct visit) → back to browsing
+  // no valid held order (e.g. direct visit) → back to browsing
   useEffect(() => {
-    if (hydrated && (!event || !zone || qty === 0)) router.replace("/events");
+    if (hydrated && (!event || !zone || qty === 0 || !txnId))
+      router.replace("/events");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
 
-  // hold expired → release and return to event
+  // hold expired → release the order in the DB and return to the event
   useEffect(() => {
-    if (remaining === 0 && event) {
+    if (remaining === 0 && event && txnId) {
+      cancelOrderAction(txnId);
       clearHold();
       router.replace(`/events/${event.id}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining]);
 
-  if (!hydrated || !event || !zone || qty === 0) return null;
+  if (!hydrated || !event || !zone || qty === 0 || !txnId) return null;
 
-  const seatText = sortSeats(seats).map(seatLabel).join(", ");
-  const holdLabel = formatClock(remaining ?? HOLD_SECONDS);
+  const seatText = isGa
+    ? `${qty} ใบ`
+    : sortSeats(seats).map(seatLabel).join(", ");
+  const holdLabel = formatClock(remaining ?? 0);
+
+  // "แก้ไข" → ปล่อยที่นั่งที่ถืออยู่ แล้วกลับไปเลือกใหม่
+  async function editSelection() {
+    await cancelOrderAction(txnId);
+    clearHold();
+    router.push(`/events/${event.id}/seats`);
+  }
 
   return (
     <div className="mx-auto max-w-[880px] px-12 pb-14 pt-9">
@@ -94,7 +106,7 @@ export default function CartPage() {
                 {qty} ใบ
               </span>
               <span className="rounded-full bg-accent-soft-2 px-3 py-[6px] font-mono text-[13px] text-accent">
-                ที่นั่ง {seatText}
+                {isGa ? "โซนยืน" : `ที่นั่ง ${seatText}`}
               </span>
             </div>
           </div>
@@ -119,7 +131,7 @@ export default function CartPage() {
 
       <div className="flex gap-[14px]">
         <button
-          onClick={() => router.push(`/events/${event.id}/seats`)}
+          onClick={editSelection}
           className="rounded-[10px] border border-[#d4d4d8] px-7 py-[15px] text-[16px] font-medium text-ink transition-colors hover:bg-surface"
         >
           ← แก้ไข

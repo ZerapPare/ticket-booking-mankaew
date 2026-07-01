@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import CheckoutStepper from "@/components/checkout-stepper";
 import { useBooking } from "@/lib/booking-context";
 import { useCountdown } from "@/lib/use-countdown";
-import { getEvent, HOLD_SECONDS } from "@/lib/mock-data";
+import { cancelOrderAction, confirmPaymentAction } from "@/lib/actions/booking";
 import { formatBaht, formatClock } from "@/lib/format";
 
 const METHODS = [
@@ -19,43 +19,54 @@ export default function PaymentPage() {
   const router = useRouter();
   const {
     hydrated,
-    eventId,
+    event,
     zone,
     qty,
     subtotal,
     fee,
     total,
     payMethod,
+    txnId,
     holdExpiresAt,
     setPayMethod,
-    completeOrder,
     clearHold,
   } = useBooking();
 
-  const event = getEvent(eventId);
   const remaining = useCountdown(holdExpiresAt);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (hydrated && (!event || !zone || qty === 0)) router.replace("/events");
+    if (hydrated && (!event || !zone || qty === 0 || !txnId))
+      router.replace("/events");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
 
   useEffect(() => {
-    if (remaining === 0 && event) {
+    if (remaining === 0 && event && txnId) {
+      cancelOrderAction(txnId);
       clearHold();
       router.replace(`/events/${event.id}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining]);
 
-  if (!hydrated || !event || !zone || qty === 0) return null;
+  if (!hydrated || !event || !zone || qty === 0 || !txnId) return null;
 
-  const holdLabel = formatClock(remaining ?? HOLD_SECONDS);
+  const holdLabel = formatClock(remaining ?? 0);
   const showQR = payMethod === "promptpay" || payMethod === "mbanking";
 
-  function confirm() {
-    const orderId = completeOrder();
-    router.push(`/tickets/${orderId}`);
+  async function confirm() {
+    setError("");
+    setSubmitting(true);
+    const res = await confirmPaymentAction(txnId, payMethod);
+    if (!res.ok) {
+      setSubmitting(false);
+      setError(res.error);
+      return;
+    }
+    clearHold();
+    router.push(`/tickets/${txnId}`);
   }
 
   return (
@@ -130,7 +141,7 @@ export default function PaymentPage() {
               <div className="mx-auto w-fit rounded-[10px] border border-line-2 bg-white p-3">
                 {/* Real QR encoding a mock PromptPay payment payload */}
                 <QRCodeSVG
-                  value={`promptpay://mankaew?amount=${total}&ref=${eventId}-${qty}`}
+                  value={`promptpay://mankaew?amount=${total}&ref=${txnId}`}
                   size={170}
                   level="M"
                 />
@@ -163,11 +174,20 @@ export default function PaymentPage() {
               <span>รวม</span>
               <span>{formatBaht(total)}</span>
             </div>
+
+            {error ? (
+              <div className="mb-3 rounded-[10px] bg-[#fef2f2] px-4 py-3 text-[13px] text-[#dc2626]">
+                {error}
+              </div>
+            ) : null}
+
             <button
               onClick={confirm}
-              className="w-full rounded-[10px] bg-accent py-[15px] text-center text-[16px] font-semibold text-white transition-colors hover:bg-accent-dark"
+              disabled={submitting}
+              className="w-full rounded-[10px] py-[15px] text-center text-[16px] font-semibold text-white transition-colors"
+              style={{ background: submitting ? "#c4b5fd" : "#7c3aed" }}
             >
-              ยืนยันชำระเงิน {formatBaht(total)}
+              {submitting ? "กำลังยืนยัน…" : `ยืนยันชำระเงิน ${formatBaht(total)}`}
             </button>
             <div className="mt-3 text-center text-[11px] text-fainter">
               🔒 ชำระเงินอย่างปลอดภัยผ่านระบบเข้ารหัส

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { useBooking } from "@/lib/booking-context";
 import { QUEUE_TOTAL } from "@/lib/mock-data";
@@ -14,15 +13,14 @@ import { QUEUE_TOTAL } from "@/lib/mock-data";
   countdown can't be skipped by refreshing.
 */
 export default function QueueRoom({ eventId, eventTitle }) {
-  const router = useRouter();
-  const { eventId: current, selectEvent, restartHold } = useBooking();
+  const { eventId: current, startFlow } = useBooking();
   const [pos, setPos] = useState(QUEUE_TOTAL);
   const [ready, setReady] = useState(false);
   const timer = useRef(null);
 
   // keep the flow pointed at this event (e.g. on a deep link / refresh)
   useEffect(() => {
-    if (current !== eventId) selectEvent(eventId);
+    if (current !== eventId) startFlow(eventId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
@@ -40,12 +38,6 @@ export default function QueueRoom({ eventId, eventTitle }) {
     }, 900);
     return () => clearInterval(timer.current);
   }, []);
-
-  // ถึงคิวแล้ว -> เริ่มจับเวลาถือบัตร 10:00 ใหม่สดทุกครั้ง
-  useEffect(() => {
-    if (ready) restartHold();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
 
   const pct = Math.min(100, Math.round((1 - pos / QUEUE_TOTAL) * 100));
   const etaSec = Math.max(0, Math.round((pos / 220) * 0.9));
