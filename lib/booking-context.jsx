@@ -1,7 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { FEE_PER_SEAT, MAX_SEATS, HOLD_MS } from "@/lib/constants";
+import { cancelOrderAction } from "@/lib/actions/booking";
 
 /*
   Booking flow state shared across the buyer routes:
@@ -56,6 +65,32 @@ export function BookingProvider({ children }) {
       /* ignore */
     }
   }, [state, hydrated]);
+
+  // ปล่อย hold อัตโนมัติเมื่อ "ออกจาก checkout"
+  // กติกา: ออเดอร์ที่ถือค้างได้เฉพาะตอนอยู่ /cart หรือ /payment เท่านั้น
+  // ถ้าเปลี่ยนไปหน้าอื่น (back ไป seats, กดโลโก้, เปิดอีเวนต์อื่น) แล้วยังมี txn ค้าง
+  // -> ยกเลิกออเดอร์ คืนที่นั่ง/โควต้า (คง timer ของคิวไว้ ไม่ต่อเวลาให้)
+  // ผูก effect กับ pathname อย่างเดียว + อ่าน txnId จาก ref เพื่อไม่ให้ยกเลิก
+  // ตอนเพิ่งสร้าง hold บนหน้า seats (txn ถูก set ก่อน pathname เปลี่ยนเป็น /cart)
+  const pathname = usePathname();
+  const router = useRouter();
+  const txnRef = useRef(null);
+  useEffect(() => {
+    txnRef.current = state.txnId;
+  }, [state.txnId]);
+
+  useEffect(() => {
+    const inCheckout = pathname === "/cart" || pathname === "/payment";
+    const txnId = txnRef.current;
+    if (inCheckout || !txnId) return;
+    txnRef.current = null; // กันยิงซ้ำระหว่างที่ยกเลิกยังไม่เสร็จ
+    (async () => {
+      await cancelOrderAction(txnId); // guard ฝั่ง server: ยกเลิกเฉพาะ 'pending'
+      setState((s) => (s.txnId === txnId ? { ...s, txnId: null } : s)); // เคลียร์แค่ txn คง timer ไว้
+      router.refresh(); // ให้ผังที่นั่งหน้าปลายทางเห็นที่นั่งที่คืนแล้ว
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const actions = useMemo(() => {
     const patch = (p) => setState((s) => ({ ...s, ...p }));

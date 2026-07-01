@@ -56,6 +56,17 @@ export default function SeatSelection({ event, zones, seatMaps }) {
   const rows = zone && !isGa ? seatMaps[zone.id] || [] : [];
   const chips = sortSeats(seats).map(seatLabel);
 
+  // โซนยืน: จำนวนคงเหลือ + เพดานที่เลือกได้ (คงเหลือ vs สูงสุดต่อออเดอร์)
+  const gaRemaining = zone?.remaining ?? 0;
+  const gaMax = Math.min(MAX_SEATS, gaRemaining);
+  const gaSoldOut = isGa && gaRemaining === 0;
+
+  // ถ้าเลือกจำนวนเกินที่เหลือ ให้ลดลงมาที่เพดาน
+  useEffect(() => {
+    if (isGa && gaMax >= 1 && gaQty > gaMax) setGaQty(gaMax);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGa, gaMax]);
+
   async function onContinue() {
     setError("");
     setSubmitting(true);
@@ -142,6 +153,17 @@ export default function SeatSelection({ event, zones, seatMaps }) {
               <div className="text-[15px] font-semibold">
                 โซนยืน {zone.name} — เลือกจำนวนบัตร
               </div>
+              <div
+                className="rounded-full px-3 py-1 text-[13px] font-semibold"
+                style={{
+                  background: gaSoldOut ? "#fef2f2" : "#f5f3ff",
+                  color: gaSoldOut ? "#dc2626" : "#7c3aed",
+                }}
+              >
+                {gaSoldOut
+                  ? "บัตรเต็มแล้ว"
+                  : `เหลือ ${gaRemaining.toLocaleString("en-US")} ใบ`}
+              </div>
               <div className="flex items-center gap-5">
                 <Stepper
                   label="−"
@@ -153,7 +175,7 @@ export default function SeatSelection({ event, zones, seatMaps }) {
                 </span>
                 <Stepper
                   label="+"
-                  disabled={gaQty >= MAX_SEATS}
+                  disabled={gaQty >= gaMax}
                   onClick={() => setGaQty(gaQty + 1)}
                 />
               </div>
@@ -291,12 +313,19 @@ export default function SeatSelection({ event, zones, seatMaps }) {
             ) : null}
 
             <button
-              disabled={qty === 0 || submitting}
+              disabled={qty === 0 || submitting || gaSoldOut}
               onClick={onContinue}
               className="w-full rounded-[10px] py-[15px] text-center text-[16px] font-semibold text-white transition-colors"
-              style={{ background: qty > 0 && !submitting ? "#7c3aed" : "#c4b5fd" }}
+              style={{
+                background:
+                  qty > 0 && !submitting && !gaSoldOut ? "#7c3aed" : "#c4b5fd",
+              }}
             >
-              {submitting ? "กำลังถือบัตร…" : "ดำเนินการต่อ"}
+              {gaSoldOut
+                ? "เต็มแล้ว"
+                : submitting
+                  ? "กำลังถือบัตร…"
+                  : "ดำเนินการต่อ"}
             </button>
           </div>
         </div>

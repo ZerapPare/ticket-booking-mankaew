@@ -51,10 +51,9 @@ export default function CartPage() {
     : sortSeats(seats).map(seatLabel).join(", ");
   const holdLabel = formatClock(remaining ?? 0);
 
-  // "แก้ไข" → ปล่อยที่นั่งที่ถืออยู่ แล้วกลับไปเลือกใหม่
-  async function editSelection() {
-    await cancelOrderAction(txnId);
-    clearHold();
+  // "แก้ไข" → กลับไปหน้าเลือกที่นั่ง; BookingProvider จะปล่อยที่นั่งที่ถืออยู่ให้เอง
+  // (คง timer ของคิวไว้ ไม่ต่อเวลา)
+  function editSelection() {
     router.push(`/events/${event.id}/seats`);
   }
 
