@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { FEE_PER_SEAT, MAX_SEATS } from "@/lib/constants";
+import { FEE_PER_SEAT, MAX_SEATS, HOLD_MS } from "@/lib/constants";
 
 /*
   Booking flow state shared across the buyer routes:
@@ -94,8 +94,14 @@ export function BookingProvider({ children }) {
         }),
       setGaQty: (n) =>
         patch({ gaQty: Math.max(1, Math.min(MAX_SEATS, Math.floor(n) || 1)) }),
-      // เมื่อ RPC สร้าง hold สำเร็จ -> เก็บ txn จริง + เวลาหมดอายุจาก DB
-      beginHold: ({ txnId, holdExpiresAt }) => patch({ txnId, holdExpiresAt }),
+      // เริ่มนับถอยหลัง checkout ที่ "ถึงคิวคุณแล้ว" — ตั้งครั้งเดียว ไม่รีเซ็ตซ้ำ
+      // (นับต่อเนื่อง queue → seats → cart → payment)
+      startCheckoutTimer: () =>
+        setState((s) =>
+          s.holdExpiresAt ? s : { ...s, holdExpiresAt: Date.now() + HOLD_MS }
+        ),
+      // เมื่อ RPC สร้าง hold สำเร็จ -> เก็บแค่ txn จริง (ไม่แตะ timer ของคิว)
+      beginHold: (txnId) => patch({ txnId }),
       // ปล่อย hold (หมดเวลา/ยกเลิก) — ล้างทั้ง txn และเวลา เพื่อไม่ให้ใช้ txn เดิมซ้ำ
       clearHold: () => patch({ txnId: null, holdExpiresAt: null }),
       setPayMethod: (payMethod) => patch({ payMethod }),

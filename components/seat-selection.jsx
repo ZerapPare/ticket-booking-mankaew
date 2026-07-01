@@ -6,7 +6,8 @@ import CheckoutStepper from "@/components/checkout-stepper";
 import { useBooking } from "@/lib/booking-context";
 import { MAX_SEATS } from "@/lib/constants";
 import { holdSeatsAction, bookGaAction } from "@/lib/actions/booking";
-import { formatBaht, seatLabel, sortSeats } from "@/lib/format";
+import { useCountdown } from "@/lib/use-countdown";
+import { formatBaht, formatClock, seatLabel, sortSeats } from "@/lib/format";
 
 export default function SeatSelection({ event, zones, seatMaps }) {
   const router = useRouter();
@@ -21,21 +22,36 @@ export default function SeatSelection({ event, zones, seatMaps }) {
     subtotal,
     fee,
     total,
+    holdExpiresAt,
     setEvent,
+    startCheckoutTimer,
     selectZone,
     toggleSeat,
     setGaQty,
     beginHold,
+    clearHold,
   } = b;
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const remaining = useCountdown(holdExpiresAt);
 
-  // bind the flow to this event (resets selection if the event changed)
+  // bind the flow to this event (resets selection if the event changed) และ
+  // การันตีว่ามี timer ระหว่าง checkout เสมอ (no-op ถ้าคิวเริ่มไว้แล้ว)
   useEffect(() => {
     setEvent(event);
+    startCheckoutTimer();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event.id]);
+
+  // หมดเวลา -> ล้าง flow แล้วกลับไปหน้าอีเวนต์ (ยังไม่มีออเดอร์ให้ยกเลิก)
+  useEffect(() => {
+    if (remaining === 0) {
+      clearHold();
+      router.replace(`/events/${event.id}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining]);
 
   const rows = zone && !isGa ? seatMaps[zone.id] || [] : [];
   const chips = sortSeats(seats).map(seatLabel);
@@ -57,13 +73,22 @@ export default function SeatSelection({ event, zones, seatMaps }) {
       }
       return;
     }
-    beginHold({ txnId: res.txnId, holdExpiresAt: res.holdExpiresAt });
+    beginHold(res.txnId);
     router.push("/cart");
   }
 
   return (
     <div className="mx-auto max-w-[1280px] px-12 pb-14 pt-9">
-      <CheckoutStepper current={1} />
+      <CheckoutStepper
+        current={1}
+        right={
+          remaining != null ? (
+            <span className="text-accent">
+              ⏱ ถือบัตรไว้ {formatClock(remaining)}
+            </span>
+          ) : null
+        }
+      />
       <h1 className="mb-7 text-[32px] font-bold tracking-[-.5px]">เลือกที่นั่ง</h1>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]">

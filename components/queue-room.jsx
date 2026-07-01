@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { useBooking } from "@/lib/booking-context";
+import { useCountdown } from "@/lib/use-countdown";
+import { formatClock } from "@/lib/format";
 import { QUEUE_TOTAL } from "@/lib/mock-data";
 
 /*
@@ -13,16 +15,24 @@ import { QUEUE_TOTAL } from "@/lib/mock-data";
   countdown can't be skipped by refreshing.
 */
 export default function QueueRoom({ eventId, eventTitle }) {
-  const { eventId: current, startFlow } = useBooking();
+  const { eventId: current, startFlow, startCheckoutTimer, holdExpiresAt } =
+    useBooking();
   const [pos, setPos] = useState(QUEUE_TOTAL);
   const [ready, setReady] = useState(false);
   const timer = useRef(null);
+  const remaining = useCountdown(holdExpiresAt);
 
   // keep the flow pointed at this event (e.g. on a deep link / refresh)
   useEffect(() => {
     if (current !== eventId) startFlow(eventId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
+
+  // ถึงคิวแล้ว -> เริ่มนับถอยหลัง 10 นาที (นับต่อเนื่องไปจนจ่ายเงิน)
+  useEffect(() => {
+    if (ready) startCheckoutTimer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   useEffect(() => {
     timer.current = setInterval(() => {
@@ -57,9 +67,12 @@ export default function QueueRoom({ eventId, eventTitle }) {
               ✓
             </div>
             <h1 className="mb-3 text-[32px] font-bold">ถึงคิวคุณแล้ว!</h1>
-            <p className="mb-8 text-[16px] text-faint">
-              คุณมีเวลา 10 นาทีในการเลือกที่นั่งและชำระเงิน
+            <p className="mb-4 text-[16px] text-faint">
+              เลือกที่นั่งและชำระเงินภายในเวลาที่กำหนด
             </p>
+            <div className="mb-8 font-mono text-[44px] font-bold tracking-[1px] text-accent">
+              {formatClock(remaining ?? 0)}
+            </div>
             <Link
               href={`/events/${eventId}/seats`}
               className="inline-block rounded-[10px] bg-accent px-12 py-4 text-[17px] font-semibold text-white transition-colors hover:bg-accent-dark"

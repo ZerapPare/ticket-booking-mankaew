@@ -203,7 +203,8 @@ begin
   loop
     i := i + 1;
     v_serial := v_prefix || '-' || to_char(now(), 'YYMMDD') || '-'
-                || substr(replace(v_txn_id::text, '-', ''), 1, 5) || lpad(i::text, 2, '0');
+                || upper(substr(replace(v_txn_id::text, '-', ''), 1, 10))
+                || lpad(i::text, 2, '0');
 
     with ins as (
       insert into public.tickets (
