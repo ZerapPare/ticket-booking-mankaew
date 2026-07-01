@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardHeader, Panel } from "@/components/dashboard/primitives";
+import EventStatusControl from "@/components/organizer/event-status-control";
 import { getOrganizerEventReport } from "@/lib/data/organizer";
 import { formatBaht } from "@/lib/format";
 
@@ -39,6 +40,8 @@ export default async function OrganizerReport({ params }) {
         }
       />
       <div className="p-[32px_40px]">
+        <EventStatusControl eventId={id} status={event.status} />
+
         <div className="mb-7 grid grid-cols-1 gap-5 md:grid-cols-3">
           <ReportCard label="รายได้รวม" value={formatBaht(event.revenue)} />
           <ReportCard
