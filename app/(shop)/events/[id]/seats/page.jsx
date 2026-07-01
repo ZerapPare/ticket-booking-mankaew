@@ -8,9 +8,12 @@ export const metadata = { title: "เลือกที่นั่ง — Manka
 export default async function SeatsPage({ params }) {
   const { id } = await params;
 <<<<<<< HEAD
+<<<<<<< HEAD
   const session = await auth();
   if (!session?.user?.id) redirect(`/login?callbackUrl=/events/${id}/seats`);
 
+=======
+>>>>>>> parent of 18b3827 (ระบบที่นั่ง)
 =======
 >>>>>>> parent of 18b3827 (ระบบที่นั่ง)
   const event = await getEventDetail(id);

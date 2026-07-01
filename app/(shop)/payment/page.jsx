@@ -16,11 +16,14 @@ const METHODS = [
 ];
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export default async function PaymentPage({ searchParams }) {
   const { txn } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/events");
 =======
+=======
+>>>>>>> parent of 18b3827 (ระบบที่นั่ง)
 export default function PaymentPage() {
   const router = useRouter();
   const {
@@ -37,6 +40,9 @@ export default function PaymentPage() {
     completeOrder,
     clearHold,
   } = useBooking();
+<<<<<<< HEAD
+>>>>>>> parent of 18b3827 (ระบบที่นั่ง)
+=======
 >>>>>>> parent of 18b3827 (ระบบที่นั่ง)
 
   const event = getEvent(eventId);

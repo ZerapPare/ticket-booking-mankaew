@@ -24,10 +24,15 @@ export default function CartPage() {
   } = useBooking();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export default async function CartPage({ searchParams }) {
   const { txn } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/events");
+=======
+  const event = getEvent(eventId);
+  const remaining = useCountdown(holdExpiresAt);
+>>>>>>> parent of 18b3827 (ระบบที่นั่ง)
 =======
   const event = getEvent(eventId);
   const remaining = useCountdown(holdExpiresAt);
