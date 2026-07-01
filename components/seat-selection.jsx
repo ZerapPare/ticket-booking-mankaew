@@ -1,131 +1,75 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CheckoutStepper from "@/components/checkout-stepper";
-import SeatMap from "@/components/seat-map";
-import { supabasePublic } from "@/lib/supabase/public";
-import { holdSeats, bookGa } from "@/lib/actions/booking";
-import { formatBaht, seatLabel, sortSeats } from "@/lib/format";
+import { useBooking } from "@/lib/booking-context";
+import { useCountdown } from "@/lib/use-countdown";
+import { ZONES, buildSeatRows, MAX_SEATS, HOLD_SECONDS } from "@/lib/mock-data";
+import { formatBaht, formatClock, seatLabel, sortSeats } from "@/lib/format";
 
-const MAX_SEATS = 8;
-
-// group seats (จาก supabase) เป็นแถว A,B,C...
-function groupRows(data) {
-  const rows = [];
-  let cur = null;
-  for (const s of data || []) {
-    if (!cur || cur.letter !== s.row_letter) {
-      cur = { letter: s.row_letter, seats: [] };
-      rows.push(cur);
-    }
-    cur.seats.push({
-      id: s.id,
-      label: s.seat_label,
-      num: s.seat_number,
-      status: s.status,
-    });
-  }
-  return rows;
-}
-
-export default function SeatSelection({ event, zones }) {
+export default function SeatSelection({ event }) {
   const router = useRouter();
-  const [zoneId, setZoneId] = useState(null);
-  const [seatRows, setSeatRows] = useState([]);
-  const [selected, setSelected] = useState([]); // seat ids (seated)
-  const [gaQty, setGaQty] = useState(1); // ga
-  const [loadingMap, setLoadingMap] = useState(false);
-  const [error, setError] = useState(null);
-  const [pending, startTransition] = useTransition();
+  const b = useBooking();
+  const {
+    eventId,
+    zoneId,
+    seats,
+    zone,
+    qty,
+    subtotal,
+    fee,
+    total,
+    holdExpiresAt,
+    selectEvent,
+    selectZone,
+    toggleSeat,
+    startHold,
+    clearHold,
+  } = b;
 
-  const zone = zones.find((z) => z.id === zoneId) || null;
-  const isSeated = zone?.seatingType === "seated";
-
-  // โหลดผังที่นั่งเมื่อเลือกโซน seated
+  // bind the flow to this event + start the 10-min hold
   useEffect(() => {
-    if (!zone || zone.seatingType !== "seated") {
-      setSeatRows([]);
-      return;
+    if (eventId !== event.id) selectEvent(event.id);
+    startHold();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event.id]);
+
+  const remaining = useCountdown(holdExpiresAt);
+
+  // hold expired → release seats and return to the event
+  useEffect(() => {
+    if (remaining === 0) {
+      clearHold();
+      router.replace(`/events/${event.id}`);
     }
-    let alive = true;
-    setLoadingMap(true);
-    supabasePublic()
-      .from("seats")
-      .select("id,seat_label,row_letter,seat_number,status")
-      .eq("ticket_type_id", zone.id)
-      .order("row_letter", { ascending: true })
-      .order("seat_number", { ascending: true })
-      .then(({ data }) => {
-        if (alive) {
-          setSeatRows(groupRows(data));
-          setLoadingMap(false);
-        }
-      });
-    return () => {
-      alive = false;
-    };
-  }, [zone]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining]);
 
-  function pickZone(z) {
-    setZoneId(z.id);
-    setSelected([]);
-    setGaQty(1);
-    setError(null);
-  }
-
-  function toggleSeat(id) {
-    setSelected((cur) =>
-      cur.includes(id)
-        ? cur.filter((x) => x !== id)
-        : cur.length >= MAX_SEATS
-          ? cur
-          : [...cur, id]
-    );
-  }
-
-  // labels ของที่นั่งที่เลือก (สำหรับสรุป)
-  const labelById = {};
-  for (const r of seatRows) for (const s of r.seats) labelById[s.id] = s.label;
-  const chips = sortSeats(selected.map((id) => labelById[id] || id)).map(
-    (l) => seatLabel(l)
-  );
-
-  const qty = isSeated ? selected.length : gaQty;
-  const price = zone?.price ?? 0;
-  const total = price * qty;
-  const canProceed = zone && qty > 0;
-
-  function proceed() {
-    if (!canProceed || pending) return;
-    setError(null);
-    startTransition(async () => {
-      const res = isSeated
-        ? await holdSeats(selected)
-        : await bookGa(zone.id, gaQty);
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
-      router.push(`/cart?txn=${res.txnId}`);
-    });
-  }
+  const rows = zoneId ? buildSeatRows(zoneId) : [];
+  const chips = sortSeats(seats).map(seatLabel);
+  const holdLabel = formatClock(remaining ?? HOLD_SECONDS);
 
   return (
     <div className="mx-auto max-w-[1280px] px-12 pb-14 pt-9">
-      <CheckoutStepper current={1} />
+      <CheckoutStepper
+        current={1}
+        right={
+          <span className="text-accent">⏱ ถือบัตรไว้ {holdLabel}</span>
+        }
+      />
       <h1 className="mb-7 text-[32px] font-bold tracking-[-.5px]">เลือกที่นั่ง</h1>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]">
         {/* Venue map */}
         <div className="rounded-[16px] border border-[#eee] bg-bg-soft p-8">
           <div className="mb-6 flex flex-wrap gap-2">
-            {zones.map((z) => {
+            {ZONES.map((z) => {
               const on = z.id === zoneId;
               return (
                 <button
                   key={z.id}
-                  onClick={() => pickZone(z)}
+                  onClick={() => selectZone(z.id)}
                   className="flex items-center gap-[9px] rounded-full border-[1.5px] px-[15px] py-[9px] transition-all"
                   style={{
                     background: on ? "#f5f3ff" : "#fff",
@@ -157,65 +101,73 @@ export default function SeatSelection({ event, zones }) {
             STAGE • เวที
           </div>
 
-          {!zone ? (
-            <div className="mb-7 mt-12 pb-7 text-center text-[14px] text-fainter">
-              เลือกโซนด้านบนเพื่อดูที่นั่ง
-            </div>
-          ) : isSeated ? (
+          {zoneId ? (
             <div className="mt-7">
               <div className="mb-[18px] flex items-center justify-between">
                 <div className="text-[15px] font-semibold">
-                  เลือกเก้าอี้ในโซน {zone.name}
+                  เลือกเก้าอี้ในโซน {zone?.name}
                 </div>
-                <div className="text-[13px] text-faint">สูงสุด {MAX_SEATS} ที่นั่ง</div>
+                <div className="text-[13px] text-faint">
+                  สูงสุด {MAX_SEATS} ที่นั่ง
+                </div>
               </div>
-              {loadingMap ? (
-                <div className="py-10 text-center text-[14px] text-fainter">
-                  กำลังโหลดผังที่นั่ง...
-                </div>
-              ) : (
-                <SeatMap
-                  ticketTypeId={zone.id}
-                  initialRows={seatRows}
-                  selected={selected}
-                  onToggle={toggleSeat}
-                  maxSeats={MAX_SEATS}
-                />
-              )}
-              <div className="mt-7 flex items-center justify-center gap-5 text-[12px] text-faint">
-                <Legend swatch="border-[1.5px] border-[#d4d4d8] bg-white" label="ว่าง" />
-                <Legend swatch="bg-accent" label="เลือกแล้ว" />
-                <Legend swatch="bg-[#e5e5e5]" label="ไม่ว่าง" />
+              <div className="seatmap-scroll flex flex-col items-center gap-[7px] overflow-x-auto">
+                {rows.map((row) => (
+                  <div key={row.letter} className="flex items-center gap-2">
+                    <span className="w-4 text-center font-mono text-[11px] text-fainter">
+                      {row.letter}
+                    </span>
+                    <div className="flex gap-[6px]">
+                      {row.seats.map((st) => {
+                        const selected = seats.includes(st.id);
+                        const bg = st.taken
+                          ? "#e5e5e5"
+                          : selected
+                            ? "#7c3aed"
+                            : "#fff";
+                        const bd = st.taken
+                          ? "#e5e5e5"
+                          : selected
+                            ? "#7c3aed"
+                            : "#d4d4d8";
+                        const fg = selected
+                          ? "#fff"
+                          : st.taken
+                            ? "#c4c4c4"
+                            : "#71717a";
+                        return (
+                          <button
+                            key={st.id}
+                            disabled={st.taken}
+                            onClick={() => toggleSeat(st.id)}
+                            className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-[6px] border-[1.5px] text-[10px] transition-all"
+                            style={{
+                              background: bg,
+                              borderColor: bd,
+                              color: fg,
+                              cursor: st.taken ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            {st.num}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ) : (
-            // โซนยืน (ga) — เลือกจำนวน
-            <div className="mt-10 flex flex-col items-center gap-4 pb-6">
-              <div className="text-[15px] font-semibold">
-                {zone.name} (ยืน) • เหลือ {zone.available} ใบ
-              </div>
-              <div className="flex items-center gap-5">
-                <StepBtn
-                  label="−"
-                  onClick={() => setGaQty((q) => Math.max(1, q - 1))}
-                />
-                <span className="w-10 text-center text-[24px] font-bold">
-                  {gaQty}
-                </span>
-                <StepBtn
-                  label="+"
-                  onClick={() =>
-                    setGaQty((q) =>
-                      Math.min(MAX_SEATS, zone.available, zone.maxPerOrder, q + 1)
-                    )
-                  }
-                />
-              </div>
-              <div className="text-[13px] text-fainter">
-                สูงสุด {Math.min(MAX_SEATS, zone.maxPerOrder)} ใบต่อออเดอร์
-              </div>
+            <div className="mb-7 mt-12 pb-7 text-center text-[14px] text-fainter">
+              เลือกโซนด้านบนเพื่อดูแผนผังที่นั่ง แล้วคลิกเลือกเก้าอี้รายตัว
             </div>
           )}
+
+          <div className="mt-7 flex items-center justify-center gap-5 text-[12px] text-faint">
+            <Legend swatch="border-[1.5px] border-[#d4d4d8] bg-white" label="ว่าง" />
+            <Legend swatch="bg-accent" label="เลือกแล้ว" />
+            <Legend swatch="bg-[#e5e5e5]" label="ไม่ว่าง" />
+          </div>
         </div>
 
         {/* Summary */}
@@ -236,57 +188,49 @@ export default function SeatSelection({ event, zones }) {
               >
                 {zone ? zone.name : "ยังไม่ได้เลือกโซน"}
               </div>
-              {zone && (
-                <div className="mt-[2px] text-[13px] text-faint">
-                  {formatBaht(zone.price)} / {isSeated ? "ที่นั่ง" : "ใบ"}
+              <div className="mt-[2px] text-[13px] text-faint">
+                {zone
+                  ? `${formatBaht(zone.price)} / ที่นั่ง • คลิกเลือกเก้าอี้ในผังด้านซ้าย`
+                  : "กรุณาเลือกโซนก่อน แล้วเลือกเก้าอี้รายตัว"}
+              </div>
+            </div>
+
+            <div className="mb-[22px]">
+              <div className="mb-[10px] font-mono text-[11px] tracking-[1px] text-fainter">
+                ที่นั่งที่เลือก ({qty})
+              </div>
+              {chips.length > 0 ? (
+                <div className="flex flex-wrap gap-[7px]">
+                  {chips.map((c) => (
+                    <span
+                      key={c}
+                      className="rounded-[8px] bg-accent-soft-2 px-3 py-[6px] font-mono text-[13px] font-semibold text-accent"
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[13px] text-fainter">
+                  ยังไม่ได้เลือกที่นั่ง
                 </div>
               )}
             </div>
 
-            {isSeated && (
-              <div className="mb-[22px]">
-                <div className="mb-[10px] font-mono text-[11px] tracking-[1px] text-fainter">
-                  ที่นั่งที่เลือก ({qty})
-                </div>
-                {chips.length > 0 ? (
-                  <div className="flex flex-wrap gap-[7px]">
-                    {chips.map((c) => (
-                      <span
-                        key={c}
-                        className="rounded-[8px] bg-accent-soft-2 px-3 py-[6px] font-mono text-[13px] font-semibold text-accent"
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-[13px] text-fainter">ยังไม่ได้เลือกที่นั่ง</div>
-                )}
-              </div>
-            )}
-
-            <div className="mb-2 flex justify-between text-[14px] text-faint">
-              <span>ราคาบัตร × {qty}</span>
-              <span>{formatBaht(total)}</span>
-            </div>
+            <Row label={`ราคาบัตร × ${qty}`} value={formatBaht(subtotal)} />
+            <Row label="ค่าธรรมเนียม" value={formatBaht(fee)} muted />
             <div className="mb-[22px] mt-[14px] flex justify-between border-t border-[#f0f0f1] pt-[14px] text-[18px] font-bold">
               <span>รวม</span>
               <span>{formatBaht(total)}</span>
             </div>
 
-            {error && (
-              <div className="mb-3 rounded-[9px] bg-danger-bg px-[14px] py-3 text-[13px] text-danger">
-                {error}
-              </div>
-            )}
-
             <button
-              disabled={!canProceed || pending}
-              onClick={proceed}
+              disabled={qty === 0}
+              onClick={() => router.push("/cart")}
               className="w-full rounded-[10px] py-[15px] text-center text-[16px] font-semibold text-white transition-colors"
-              style={{ background: canProceed && !pending ? "#7c3aed" : "#c4b5fd" }}
+              style={{ background: qty > 0 ? "#7c3aed" : "#c4b5fd" }}
             >
-              {pending ? "กำลังจอง..." : "ดำเนินการต่อ"}
+              ดำเนินการต่อ
             </button>
           </div>
         </div>
@@ -304,13 +248,11 @@ function Legend({ swatch, label }) {
   );
 }
 
-function StepBtn({ label, onClick }) {
+function Row({ label, value }) {
   return (
-    <button
-      onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-full border border-line-2 text-[20px] text-muted transition-colors hover:border-accent hover:text-accent"
-    >
-      {label}
-    </button>
+    <div className="mb-2 flex justify-between text-[14px] text-faint">
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
   );
 }

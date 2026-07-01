@@ -1,14 +1,19 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import AccountView from "@/components/account-view";
-import { getMyTickets } from "@/lib/data/transactions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "บัญชีของฉัน — Mankaew" };
 
 export default async function AccountPage() {
   const session = await auth();
+<<<<<<< HEAD
   if (!session?.user?.id) redirect("/login?callbackUrl=/account");
   const tickets = await getMyTickets(session.user.id);
   return <AccountView user={session.user} tickets={tickets} />;
 }
+=======
+  if (!session?.user) redirect("/login?callbackUrl=/account");
+  return <AccountView user={session.user} />;
+}
+>>>>>>> parent of 18b3827 (ระบบที่นั่ง)

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { useBooking } from "@/lib/booking-context";
 import { QUEUE_TOTAL } from "@/lib/mock-data";
@@ -14,7 +13,6 @@ import { QUEUE_TOTAL } from "@/lib/mock-data";
   countdown can't be skipped by refreshing.
 */
 export default function QueueRoom({ eventId, eventTitle }) {
-  const router = useRouter();
   const { eventId: current, selectEvent, restartHold } = useBooking();
   const [pos, setPos] = useState(QUEUE_TOTAL);
   const [ready, setReady] = useState(false);

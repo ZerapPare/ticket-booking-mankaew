@@ -3,12 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useBooking } from "@/lib/booking-context";
 
-// Starts the buy flow for an event: records the event in the checkout state,
-// then sends the user into the queue / waiting room.
+// เริ่ม flow ซื้อ -> เข้าห้องรอคิว (ต้อง login; proxy คุม /queue อยู่แล้ว)
 export default function BuyButton({ eventId }) {
   const router = useRouter();
   const { selectEvent } = useBooking();
-
   return (
     <button
       onClick={() => {
