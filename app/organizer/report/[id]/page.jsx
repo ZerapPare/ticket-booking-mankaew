@@ -1,34 +1,31 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { DashboardHeader, Panel } from "@/components/dashboard/primitives";
-import {
-  ORG_EVENTS,
-  getOrgEvent,
-  zoneBreakdownFor,
-  PLATFORM_FEE_RATE,
-} from "@/lib/organizer-mock";
+import { getOrganizerEventReport } from "@/lib/data/organizer";
 import { formatBaht } from "@/lib/format";
 
-export function generateStaticParams() {
-  return ORG_EVENTS.map((e) => ({ id: e.id }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
-  const ev = getOrgEvent(id);
+  const session = await auth();
+  const scope = session?.user?.role === "admin" ? null : session?.user?.id;
+  const report = await getOrganizerEventReport(id, scope);
   return {
-    title: ev
-      ? `รายงานยอดขาย: ${ev.title} — Organizer | Mankaew`
+    title: report
+      ? `รายงานยอดขาย: ${report.event.title} — Organizer | Mankaew`
       : "ไม่พบอีเวนต์ — Mankaew",
   };
 }
 
 export default async function OrganizerReport({ params }) {
   const { id } = await params;
-  const event = getOrgEvent(id);
-  if (!event) notFound();
+  const session = await auth();
+  const scope = session?.user?.role === "admin" ? null : session?.user?.id;
+  const report = await getOrganizerEventReport(id, scope);
+  if (!report) notFound();
 
-  const net = Math.round(event.revenue * (1 - PLATFORM_FEE_RATE));
-  const zones = zoneBreakdownFor(event);
+  const { event, zones } = report;
 
   return (
     <div>
@@ -57,7 +54,7 @@ export default async function OrganizerReport({ params }) {
           />
           <ReportCard
             label="รายได้สุทธิ (หลังหักค่าธรรมเนียม)"
-            value={formatBaht(net)}
+            value={formatBaht(event.net)}
             accent
           />
         </div>
@@ -93,7 +90,7 @@ export default async function OrganizerReport({ params }) {
             </div>
           ) : (
             <div className="py-8 text-center text-[14px] text-fainter">
-              อีเวนต์นี้ยังไม่เริ่มขาย — ยังไม่มียอดขายแยกตามโซน
+              อีเวนต์นี้ยังไม่มียอดขาย — ยังไม่มีข้อมูลแยกตามโซน
             </div>
           )}
         </Panel>
