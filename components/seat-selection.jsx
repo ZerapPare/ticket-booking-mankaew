@@ -194,11 +194,13 @@ export default function SeatSelection({ event, zones, seatMaps }) {
             </div>
           )}
 
-          <div className="mt-7 flex items-center justify-center gap-5 text-[12px] text-faint">
-            <Legend swatch="border-[1.5px] border-[#d4d4d8] bg-white" label="ว่าง" />
-            <Legend swatch="bg-accent" label="เลือกแล้ว" />
-            <Legend swatch="bg-[#e5e5e5]" label="ไม่ว่าง" />
-          </div>
+          {zone && !isGa && (
+            <div className="mt-7 flex items-center justify-center gap-5 text-[12px] text-faint">
+              <Legend swatch="border-[1.5px] border-[#d4d4d8] bg-white" label="ว่าง" />
+              <Legend swatch="bg-accent" label="เลือกแล้ว" />
+              <Legend swatch="bg-[#e5e5e5]" label="ไม่ว่าง" />
+            </div>
+          )}
         </div>
 
         {/* Summary */}

@@ -45,7 +45,8 @@ create or replace function public.book_tickets(
   p_quantity       integer,
   p_seat_labels    text[] default null
 ) returns uuid
-language plpgsql security definer set search_path = public as $$
+-- search_path รวม extensions ด้วย: gen_random_bytes() ของ pgcrypto อยู่สคีมา extensions ใน Supabase
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_tt          public.ticket_types;
   v_event_id    uuid;

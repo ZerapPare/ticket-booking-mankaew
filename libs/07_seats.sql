@@ -141,7 +141,8 @@ create or replace function public.hold_seats(
   p_buyer_id uuid,
   p_seat_ids uuid[]
 ) returns uuid
-language plpgsql security definer set search_path = public as $$
+-- search_path รวม extensions ด้วย: gen_random_bytes() ของ pgcrypto อยู่สคีมา extensions ใน Supabase
+language plpgsql security definer set search_path = public, extensions as $$
 declare
   v_event_id uuid;
   v_txn_id   uuid;
