@@ -30,7 +30,7 @@ export default async function SiteHeader() {
             Admin
           </Link>
         )}
-        {(role === "organizer" || role === "admin") && (
+        {role === "organizer" && (
           <Link
             href="/organizer"
             className="text-[15px] text-muted hover:text-ink"
