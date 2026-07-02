@@ -202,9 +202,8 @@ begin
     where s.id = any(p_seat_ids)
   loop
     i := i + 1;
-    v_serial := v_prefix || '-' || to_char(now(), 'YYMMDD') || '-'
-                || upper(substr(replace(v_txn_id::text, '-', ''), 1, 10))
-                || lpad(i::text, 2, '0');
+    -- serial เป็น UUID (RFC 4122 v4) ไม่ซ้ำโดยธรรมชาติ
+    v_serial := gen_random_uuid()::text;
 
     with ins as (
       insert into public.tickets (

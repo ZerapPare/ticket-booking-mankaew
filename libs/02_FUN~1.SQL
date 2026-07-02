@@ -94,12 +94,9 @@ begin
   -- prefix ของ serial = 6 ตัวแรกของ event id (ตัด '-')
   v_prefix := upper(substr(replace(v_event_id::text, '-', ''), 1, 6));
 
-  -- (4) ออกตั๋วรายใบ — serial อิง txn id (ไม่ผูกกับ quantity_sold ที่ลดลงได้ตอน cancel
-  --      มิฉะนั้นจอง→ยกเลิก→จองใหม่ จะได้ serial ซ้ำ -> ชน unique tickets_serial_no_key)
+  -- (4) ออกตั๋วรายใบ — serial เป็น UUID (RFC 4122 v4) ไม่ซ้ำโดยธรรมชาติ
   for i in 1 .. p_quantity loop
-    v_serial := v_prefix || '-' || to_char(now(), 'YYMMDD') || '-'
-                || upper(substr(replace(v_txn_id::text, '-', ''), 1, 10))
-                || lpad(i::text, 2, '0');
+    v_serial := gen_random_uuid()::text;
 
     insert into public.tickets (
       ticket_type_id, transaction_id, owner_id,
