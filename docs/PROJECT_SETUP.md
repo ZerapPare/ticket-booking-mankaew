@@ -98,15 +98,22 @@ Route ที่ต้องล็อกอิน (matcher ใน `proxy.js`): `/
 ```
 app/
   layout.jsx               root layout (ฟอนต์ Anuphan/Space Mono, BookingProvider)
-  (shop)/                  ฝั่งผู้ซื้อ: หน้าแรก, events, cart, payment, account
+  home/                    หน้าแรก (landing)
+  (shop)/                  ฝั่งผู้ซื้อ: events, cart, payment, account
   organizer/               แดชบอร์ด organizer (create, checkin, attendees, events, report)
   admin/                   แดชบอร์ด admin (users, approvals, finance, refunds)
   login/                   หน้าเข้าสู่ระบบ
   queue/[id]/              ห้องจัดคิว
   tickets/[id]/            e-ticket
   api/auth/[...nextauth]/  NextAuth route handler
-components/                UI (dashboard/, admin/, seat-selection, e-ticket, ฯลฯ)
-lib/                       supabase clients, roles, booking-context, data, mock, utils
+components/                UI (dashboard/, admin/, organizer/, seat-selection, e-ticket, ฯลฯ)
+lib/
+  actions/                 server actions (booking.js, organizer.js)
+  data/                    data-access ฝั่ง server (events.js, organizer.js, tickets.js)
+  supabase/                server.js (service role) + public.js (anon)
+  roles.js                 แมปอีเมล → role
+  booking-context.jsx      React context ฝั่ง client สำหรับ flow การจอง
+  constants.js / format.js / use-countdown.js / mock-data.js / admin-mock.js
 libs/                      สคริปต์ SQL ตั้งค่า DB (รันตามลำดับเลข)
 auth.js / auth.config.js   ตั้งค่า NextAuth
 proxy.js                   middleware RBAC

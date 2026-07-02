@@ -2,7 +2,6 @@
 -- 09_seed_demo.sql — ข้อมูลตัวอย่างให้เว็บดูมีของ (รันต่อจาก 08)
 --   - อีเวนต์ NEON NIGHTS (published) + โซน VIP(ยืน)/A/B/C/D(มีเก้าอี้) + generate_seats
 --   - อีเวนต์ INDIE SUNSET (pending) สำหรับหน้าอนุมัติของแอดมิน
---   - ตัวอย่าง payout (รอโอน) + refund (รอพิจารณา)
 --   - ปรับ ticket_types ของ Summer Sonic (จาก 04_seed) เป็นโซนยืน 'ga'
 -- ปลอดภัยต่อการรันซ้ำ (on conflict do nothing / where not exists)
 -- =============================================================
@@ -55,25 +54,3 @@ values (
   'INDIE SUNSET FEST', 'เทศกาลดนตรีอินดี้ริมทะเล', 'เทศกาล', 'pending', now() + interval '90 days'
 )
 on conflict (id) do nothing;
-
--- =============================================================
--- ตัวอย่าง payout (รอโอนให้ผู้จัดงาน)
--- =============================================================
-insert into public.payouts (id, event_id, organizer_id, net_amount, due_at, status)
-select
-  '99999999-0000-4000-8000-000000000001',
-  'dddddddd-0000-4000-8000-000000000001',
-  '22222222-2222-4222-8222-222222222222',
-  3980000, (now() + interval '14 days')::date, 'pending'
-where not exists (select 1 from public.payouts where id = '99999999-0000-4000-8000-000000000001');
-
--- =============================================================
--- ตัวอย่าง refund (รอพิจารณา) จากผู้ซื้อ
--- =============================================================
-insert into public.refunds (id, buyer_id, event_id, amount, reason, status)
-select
-  '88888888-0000-4000-8000-000000000001',
-  '33333333-3333-4333-8333-333333333333',
-  'dddddddd-0000-4000-8000-000000000001',
-  5120, 'ติดธุระกะทันหัน', 'pending'
-where not exists (select 1 from public.refunds where id = '88888888-0000-4000-8000-000000000001');

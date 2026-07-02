@@ -27,7 +27,7 @@ insert into public.events (id, organizer_id, venue_id, title, description, categ
   ('bbbbbbbb-0000-4000-8000-000000000002',
    '22222222-2222-4222-8222-222222222222',
    'aaaaaaaa-0000-4000-8000-000000000002',
-   'Tech Conf TH 2026', 'งานสัมมนาเทคโนโลยีประจำปี', 'Conference', 'draft',
+   'Tech Conf TH 2026', 'งานสัมมนาเทคโนโลยีประจำปี', 'Conference', 'pending',
    now() + interval '60 days')
 on conflict (id) do nothing;
 

@@ -6,11 +6,16 @@ import { setEventStatusAction } from "@/lib/actions/organizer";
 import { StatusPill } from "@/components/dashboard/primitives";
 
 const PILL = {
-  draft: { label: "ร่าง", color: "#71717a", bg: "#f4f4f5" },
   published: { label: "กำลังขาย", color: "#16a34a", bg: "#f0fdf4" },
   pending: { label: "รออนุมัติ", color: "#f59e0b", bg: "#fffbeb" },
   cancelled: { label: "ยกเลิก", color: "#dc2626", bg: "#fef2f2" },
-  completed: { label: "จบแล้ว", color: "#71717a", bg: "#f4f4f5" },
+  completed: { label: "ปิดการขาย", color: "#71717a", bg: "#f4f4f5" },
+};
+
+// ข้อความอธิบายสถานะที่ organizer จัดการเองไม่ได้
+const NOTE = {
+  pending: "อีเวนต์นี้กำลังรอแอดมินอนุมัติ",
+  cancelled: "อีเวนต์ถูกยกเลิก — แก้ไขรายละเอียดเพื่อส่งอนุมัติใหม่",
 };
 
 export default function EventStatusControl({ eventId, status }) {
@@ -20,15 +25,15 @@ export default function EventStatusControl({ eventId, status }) {
 
   const pill = PILL[status] || { label: status, color: "#71717a", bg: "#f4f4f5" };
 
+  // organizer จัดการได้เฉพาะเมื่ออีเวนต์ผ่านการอนุมัติแล้ว (published/completed)
   const actions = [];
-  if (status !== "published")
-    actions.push({ to: "published", label: "เผยแพร่ (เปิดขาย)", variant: "primary" });
-  if (status === "published")
-    actions.push({ to: "draft", label: "ปิดการขาย (เป็นร่าง)", variant: "neutral" });
-  if (status !== "completed")
-    actions.push({ to: "completed", label: "จบงานแล้ว", variant: "neutral" });
-  if (status !== "cancelled")
+  if (status === "published") {
+    actions.push({ to: "completed", label: "ปิดการขาย", variant: "neutral" });
     actions.push({ to: "cancelled", label: "ยกเลิกอีเวนต์", variant: "danger" });
+  } else if (status === "completed") {
+    actions.push({ to: "published", label: "เปิดขายอีกครั้ง", variant: "primary" });
+    actions.push({ to: "cancelled", label: "ยกเลิกอีเวนต์", variant: "danger" });
+  }
 
   async function change(to) {
     if (busy) return;
@@ -52,6 +57,9 @@ export default function EventStatusControl({ eventId, status }) {
     <div className="mb-6 flex flex-wrap items-center gap-3 rounded-[14px] border border-[#eee] bg-white p-5">
       <span className="text-[14px] text-faint">สถานะ:</span>
       <StatusPill label={pill.label} color={pill.color} bg={pill.bg} />
+      {actions.length === 0 && NOTE[status] && (
+        <span className="text-[13px] text-fainter">— {NOTE[status]}</span>
+      )}
       <div className="flex-1" />
       <div className="flex flex-wrap gap-2">
         {actions.map((a) => (

@@ -138,7 +138,7 @@ export default function EditEventForm({ event }) {
       )}
       {saved && !error && (
         <div className="mt-4 rounded-[10px] bg-[#f0fdf4] px-4 py-3 text-[14px] text-[#16a34a]">
-          บันทึกการเปลี่ยนแปลงแล้ว
+          บันทึกแล้ว — ส่งให้แอดมินอนุมัติอีกครั้ง
         </div>
       )}
 

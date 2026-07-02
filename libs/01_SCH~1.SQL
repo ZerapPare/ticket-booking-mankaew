@@ -15,7 +15,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type event_status as enum ('draft', 'published', 'cancelled', 'completed');
+  create type event_status as enum ('pending', 'published', 'cancelled', 'completed');
 exception when duplicate_object then null; end $$;
 
 do $$ begin
@@ -67,7 +67,7 @@ create table if not exists public.events (
   description  text,
   poster_url   text,
   category     text,
-  status       event_status not null default 'draft',
+  status       event_status not null default 'pending',
   starts_at    timestamptz not null,
   ends_at      timestamptz,
   created_at   timestamptz not null default now(),

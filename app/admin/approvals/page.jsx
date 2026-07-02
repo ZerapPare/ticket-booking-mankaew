@@ -1,11 +1,9 @@
-"use client";
-
 import { DashboardHeader } from "@/components/dashboard/primitives";
-import { useAdmin } from "@/components/admin/admin-provider";
+import ApprovalActions from "@/components/admin/approval-actions";
+import { listPendingApprovals } from "@/lib/data/admin";
 
-// TODO: no approval table in schema yet — approve/reject only mutate local state.
-export default function AdminApprovals() {
-  const { approvals, resolveApproval } = useAdmin();
+export default async function AdminApprovals() {
+  const approvals = await listPendingApprovals();
 
   return (
     <div>
@@ -39,20 +37,7 @@ export default function AdminApprovals() {
                     โดย {a.organizer} • ส่งเมื่อ {a.submitted}
                   </div>
                 </div>
-                <div className="flex gap-[10px]">
-                  <button
-                    onClick={() => resolveApproval(a.id)}
-                    className="rounded-[9px] border border-line-2 px-5 py-[10px] text-[14px] font-medium text-danger transition-colors hover:bg-danger-bg"
-                  >
-                    ปฏิเสธ
-                  </button>
-                  <button
-                    onClick={() => resolveApproval(a.id)}
-                    className="rounded-[9px] bg-accent px-6 py-[10px] text-[14px] font-semibold text-white transition-colors hover:bg-accent-dark"
-                  >
-                    อนุมัติ
-                  </button>
-                </div>
+                <ApprovalActions id={a.id} />
               </div>
             ))}
           </div>

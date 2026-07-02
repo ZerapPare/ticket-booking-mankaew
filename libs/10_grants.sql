@@ -8,7 +8,7 @@
 --
 -- ความปลอดภัย: RLS ใน 03/07 ยังกรองแถวอยู่ — เปิดให้เห็นเฉพาะข้อมูลสาธารณะ
 -- (อีเวนต์ที่ published, venues, ticket_types/seats ของอีเวนต์ที่เปิดขาย)
--- ตาราง profiles/transactions/tickets/payouts/refunds ไม่ถูก grant ให้ anon
+-- ตาราง profiles/transactions/tickets/payouts ไม่ถูก grant ให้ anon
 -- จึงเข้าได้ผ่าน server (service role) เท่านั้น
 -- =============================================================
 
