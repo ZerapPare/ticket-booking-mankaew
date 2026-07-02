@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardHeader, Panel } from "@/components/dashboard/primitives";
@@ -34,8 +35,14 @@ export default async function OrganizerReport({ params }) {
         title="รายงานยอดขาย"
         subtitle={event.title}
         action={
-          <div className="rounded-[9px] border border-line-2 px-[18px] py-[10px] text-[14px] text-muted">
-            ส่งออกรายงาน ⬇
+          <div className="flex gap-[10px]">
+            <Link
+              href={`/organizer/events/${id}/edit`}
+              className="rounded-[9px] bg-accent px-[18px] py-[10px] text-[14px] font-semibold text-white transition-colors hover:bg-accent-dark"
+            >
+              แก้ไขรายละเอียด
+            </Link>
+            
           </div>
         }
       />
