@@ -8,6 +8,7 @@ import { StatusPill } from "@/components/dashboard/primitives";
 const PILL = {
   published: { label: "กำลังขาย", color: "#16a34a", bg: "#f0fdf4" },
   pending: { label: "รออนุมัติ", color: "#f59e0b", bg: "#fffbeb" },
+  approved: { label: "อนุมัติแล้ว", color: "#2563eb", bg: "#eff6ff" },
   cancelled: { label: "ยกเลิก", color: "#dc2626", bg: "#fef2f2" },
   completed: { label: "ปิดการขาย", color: "#71717a", bg: "#f4f4f5" },
 };
@@ -15,7 +16,7 @@ const PILL = {
 // ข้อความอธิบายสถานะที่ organizer จัดการเองไม่ได้
 const NOTE = {
   pending: "อีเวนต์นี้กำลังรอแอดมินอนุมัติ",
-  cancelled: "อีเวนต์ถูกยกเลิก — แก้ไขรายละเอียดเพื่อส่งอนุมัติใหม่",
+  cancelled: "อีเวนต์ถูกยกเลิก — ไม่สามารถแก้ไขได้",
 };
 
 export default function EventStatusControl({ eventId, status }) {
@@ -25,9 +26,12 @@ export default function EventStatusControl({ eventId, status }) {
 
   const pill = PILL[status] || { label: status, color: "#71717a", bg: "#f4f4f5" };
 
-  // organizer จัดการได้เฉพาะเมื่ออีเวนต์ผ่านการอนุมัติแล้ว (published/completed)
+  // organizer จัดการได้เฉพาะเมื่ออีเวนต์ผ่านการอนุมัติแล้ว (approved/published/completed)
   const actions = [];
-  if (status === "published") {
+  if (status === "approved") {
+    actions.push({ to: "published", label: "เปิดขาย", variant: "primary" });
+    actions.push({ to: "cancelled", label: "ยกเลิกอีเวนต์", variant: "danger" });
+  } else if (status === "published") {
     actions.push({ to: "completed", label: "ปิดการขาย", variant: "neutral" });
     actions.push({ to: "cancelled", label: "ยกเลิกอีเวนต์", variant: "danger" });
   } else if (status === "completed") {

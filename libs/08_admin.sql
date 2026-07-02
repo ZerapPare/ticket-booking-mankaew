@@ -7,7 +7,11 @@
 --    ไม่ได้ในบางรุ่น ถ้า SQL Editor ฟ้อง ให้รันบรรทัด alter type แยกก่อน
 -- =============================================================
 
--- เพิ่มสถานะ 'pending' (รออนุมัติ) ให้ enum event_status
+-- เพิ่มสถานะ 'pending' (รออนุมัติ) และ 'approved' (อนุมัติแล้ว รอเปิดขาย) ให้ enum event_status
 do $$ begin
   alter type event_status add value if not exists 'pending';
+exception when others then null; end $$;
+
+do $$ begin
+  alter type event_status add value if not exists 'approved';
 exception when others then null; end $$;

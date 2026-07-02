@@ -35,15 +35,16 @@ export default async function OrganizerReport({ params }) {
         title="รายงานยอดขาย"
         subtitle={event.title}
         action={
-          <div className="flex gap-[10px]">
-            <Link
-              href={`/organizer/events/${id}/edit`}
-              className="rounded-[9px] bg-accent px-[18px] py-[10px] text-[14px] font-semibold text-white transition-colors hover:bg-accent-dark"
-            >
-              แก้ไขรายละเอียด
-            </Link>
-            
-          </div>
+          event.status !== "cancelled" ? (
+            <div className="flex gap-[10px]">
+              <Link
+                href={`/organizer/events/${id}/edit`}
+                className="rounded-[9px] bg-accent px-[18px] py-[10px] text-[14px] font-semibold text-white transition-colors hover:bg-accent-dark"
+              >
+                แก้ไขรายละเอียด
+              </Link>
+            </div>
+          ) : null
         }
       />
       <div className="p-[32px_40px]">

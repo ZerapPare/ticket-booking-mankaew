@@ -15,7 +15,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type event_status as enum ('pending', 'published', 'cancelled', 'completed');
+  create type event_status as enum ('pending', 'approved', 'published', 'cancelled', 'completed');
 exception when duplicate_object then null; end $$;
 
 do $$ begin
