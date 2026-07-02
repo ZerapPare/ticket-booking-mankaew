@@ -3,6 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateEventAction } from "@/lib/actions/organizer";
+import ZoneRow from "@/components/organizer/zone-row";
+
+const ZONE_COLORS = ["#7c3aed", "#3b82f6", "#ec4899", "#10b981", "#f59e0b"];
+
+const emptyZone = () => ({
+  name: "",
+  price: "",
+  type: "seated",
+  capacity: "",
+  rows: "",
+  cols: "",
+  sold: 0,
+});
 
 export default function EditEventForm({ event }) {
   const router = useRouter();
@@ -15,33 +28,63 @@ export default function EditEventForm({ event }) {
     description: event.description,
   });
   const [zones, setZones] = useState(
-    event.zones.map((z) => ({ ...z, price: String(z.price) }))
+    event.zones.map((z) => ({
+      id: z.id,
+      name: z.name,
+      type: z.type,
+      price: String(z.price),
+      capacity: z.capacity != null ? String(z.capacity) : "",
+      rows: z.rows ? String(z.rows) : "",
+      cols: z.cols ? String(z.cols) : "",
+      sold: z.sold || 0,
+    }))
   );
+  const [deletedZoneIds, setDeletedZoneIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
 
-  const setField = (k, v) => {
-    setSaved(false);
-    setInfo((s) => ({ ...s, [k]: v }));
-  };
-  const setZonePrice = (id, v) => {
-    setSaved(false);
-    setZones((zs) => zs.map((z) => (z.id === id ? { ...z, price: v } : z)));
-  };
+  const setField = (k, v) => setInfo((s) => ({ ...s, [k]: v }));
+  const setZone = (i, patch) =>
+    setZones((zs) => zs.map((z, j) => (j === i ? { ...z, ...patch } : z)));
+  const addZone = () => setZones((zs) => [...zs, emptyZone()]);
+  const removeZone = (i) =>
+    setZones((zs) => {
+      const z = zs[i];
+      if (z.id) setDeletedZoneIds((d) => [...d, z.id]);
+      return zs.filter((_, j) => j !== i);
+    });
+
+  const totalCap = zones.reduce((s, z) => {
+    const n =
+      z.type === "seated" ? Number(z.rows) * Number(z.cols) : Number(z.capacity);
+    return s + (Number.isFinite(n) ? n : 0);
+  }, 0);
 
   async function save() {
     setError("");
-    setSaved(false);
     if (!info.title.trim() || !info.venue.trim() || !info.date)
       return setError("กรอกชื่อ วันที่ และสถานที่ให้ครบ");
 
-    const zonePrices = [];
+    const zonesPayload = [];
     for (const z of zones) {
+      if (!z.name.trim()) return setError("กรอกชื่อโซนให้ครบทุกโซน");
       const price = Number(z.price);
       if (!Number.isFinite(price) || price < 0)
         return setError(`ราคาโซน "${z.name}" ไม่ถูกต้อง`);
-      zonePrices.push({ id: z.id, price });
+      const base = { name: z.name.trim(), price, type: z.type };
+      if (z.id) base.id = z.id;
+      if (z.type === "seated") {
+        const rows = Number(z.rows);
+        const cols = Number(z.cols);
+        if (!(rows > 0 && cols > 0))
+          return setError(`โซน "${z.name}": ระบุจำนวนแถว/คอลัมน์`);
+        if (rows > 26) return setError(`โซน "${z.name}": แถวสูงสุด 26 (A–Z)`);
+        zonesPayload.push({ ...base, rows, cols });
+      } else {
+        const capacity = Number(z.capacity);
+        if (!(capacity > 0)) return setError(`โซน "${z.name}": ระบุจำนวนบัตร`);
+        zonesPayload.push({ ...base, capacity });
+      }
     }
 
     setSaving(true);
@@ -51,12 +94,13 @@ export default function EditEventForm({ event }) {
       category: info.category?.trim() || undefined,
       venue: info.venue.trim(),
       description: info.description?.trim() || undefined,
-      zonePrices,
+      zones: zonesPayload,
+      deletedZoneIds,
     });
     setSaving(false);
     if (!res.ok) return setError(res.error);
-    setSaved(true);
-    router.refresh();
+    // แก้ไขสำเร็จ -> อีเวนต์กลับเป็น pending, พากลับหน้ารายงาน (ล้าง state โซนใหม่)
+    router.push(`/organizer/report/${event.id}`);
   }
 
   return (
@@ -94,39 +138,36 @@ export default function EditEventForm({ event }) {
 
       <div className="mt-5">
         <Card>
-          <h2 className="mb-1 text-[18px] font-semibold">ราคาบัตรต่อโซน</h2>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="text-[18px] font-semibold">โซนและราคาบัตร</h2>
+            <button onClick={addZone} className="text-[14px] font-medium text-accent">
+              + เพิ่มโซน
+            </button>
+          </div>
           <p className="mb-5 text-[13px] text-fainter">
-            แก้ไขได้เฉพาะราคา — การเพิ่ม/ลบโซนหรือจำนวนที่นั่งทำไม่ได้เมื่อเริ่มขายแล้ว
+            เพิ่ม/แก้ไข/ลบโซนได้ — โซนที่มียอดขายแล้วจะแก้ได้เฉพาะชื่อ ราคา และเพิ่มจำนวนที่นั่ง
           </p>
-          <div className="flex flex-col gap-[10px]">
-            {zones.map((z) => (
-              <div
-                key={z.id}
-                className="flex items-center gap-4 rounded-[10px] border border-[#eee] px-4 py-3"
-              >
-                <div className="flex-1">
-                  <div className="text-[14px] font-medium">{z.name}</div>
-                  <div className="text-[12px] text-fainter">
-                    {z.type === "seated" ? "มีที่นั่ง" : "ยืน"} • ความจุ{" "}
-                    {z.capacity.toLocaleString("en-US")} • ขายแล้ว{" "}
-                    {z.sold.toLocaleString("en-US")}
-                  </div>
-                </div>
-                <div className="w-[160px]">
-                  <div className="mb-[6px] text-[12px] text-muted">ราคา (฿)</div>
-                  <Input
-                    type="number"
-                    value={z.price}
-                    onChange={(v) => setZonePrice(z.id, v)}
-                  />
-                </div>
-              </div>
+          <div className="flex flex-col gap-4">
+            {zones.map((z, i) => (
+              <ZoneRow
+                key={z.id || `new-${i}`}
+                z={z}
+                color={ZONE_COLORS[i % ZONE_COLORS.length]}
+                onChange={(patch) => setZone(i, patch)}
+                onRemove={() => removeZone(i)}
+                removable={zones.length > 1}
+                locked={z.sold > 0}
+              />
             ))}
             {zones.length === 0 && (
-              <div className="py-4 text-center text-[13px] text-fainter">
-                ยังไม่มีโซน
-              </div>
+              <div className="py-4 text-center text-[13px] text-fainter">ยังไม่มีโซน</div>
             )}
+          </div>
+          <div className="mt-6 flex items-center justify-between rounded-[10px] bg-accent-soft-3 px-5 py-4">
+            <span className="text-[14px] text-muted">ความจุรวม</span>
+            <span className="text-[18px] font-bold">
+              {totalCap.toLocaleString("en-US")} ที่นั่ง
+            </span>
           </div>
         </Card>
       </div>
@@ -134,11 +175,6 @@ export default function EditEventForm({ event }) {
       {error && (
         <div className="mt-4 rounded-[10px] bg-[#fef2f2] px-4 py-3 text-[14px] text-[#dc2626]">
           {error}
-        </div>
-      )}
-      {saved && !error && (
-        <div className="mt-4 rounded-[10px] bg-[#f0fdf4] px-4 py-3 text-[14px] text-[#16a34a]">
-          บันทึกแล้ว — ส่งให้แอดมินอนุมัติอีกครั้ง
         </div>
       )}
 

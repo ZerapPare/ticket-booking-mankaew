@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createEventAction } from "@/lib/actions/organizer";
+import ZoneRow from "@/components/organizer/zone-row";
 
 const STEPS = ["1 ข้อมูลงาน", "2 โซน & ราคา"];
 const ZONE_COLORS = ["#7c3aed", "#3b82f6", "#ec4899", "#10b981", "#f59e0b"];
@@ -231,101 +232,6 @@ export default function CreateEventForm() {
         </div>
       </div>
     </div>
-  );
-}
-
-function ZoneRow({ z, color, onChange, onRemove, removable }) {
-  const seated = z.type === "seated";
-  return (
-    <div className="rounded-[12px] border border-[#eee] p-4">
-      <div className="flex items-center gap-3">
-        <div className="h-[14px] w-[14px] flex-shrink-0 rounded-[4px]" style={{ background: color }} />
-        <input
-          value={z.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="ชื่อโซน (เช่น VIP / ZONE A)"
-          className="flex-1 rounded-[9px] border border-line-2 px-[13px] py-[10px] text-[14px] font-medium outline-none placeholder:text-fainter focus:border-accent"
-        />
-        <div className="flex overflow-hidden rounded-[9px] border border-line-2 text-[13px]">
-          <TypeTab on={seated} onClick={() => onChange({ type: "seated" })}>
-            มีที่นั่ง
-          </TypeTab>
-          <TypeTab on={!seated} onClick={() => onChange({ type: "ga" })}>
-            ยืน
-          </TypeTab>
-        </div>
-        {removable && (
-          <button
-            onClick={onRemove}
-            className="px-1 text-[18px] text-fainter hover:text-[#dc2626]"
-            aria-label="ลบโซน"
-          >
-            ×
-          </button>
-        )}
-      </div>
-      <div className="mt-3 flex gap-[10px]">
-        <Field label="ราคา (฿)" className="w-[140px]">
-          <Input
-            type="number"
-            value={z.price}
-            onChange={(v) => onChange({ price: v })}
-            placeholder="0"
-          />
-        </Field>
-        {seated ? (
-          <>
-            <Field label="แถว (A–Z)" className="w-[120px]">
-              <Input
-                type="number"
-                value={z.rows}
-                onChange={(v) => onChange({ rows: v })}
-                placeholder="10"
-              />
-            </Field>
-            <Field label="ที่นั่ง/แถว" className="w-[120px]">
-              <Input
-                type="number"
-                value={z.cols}
-                onChange={(v) => onChange({ cols: v })}
-                placeholder="18"
-              />
-            </Field>
-            <div className="flex flex-1 items-end pb-[12px] text-[13px] text-fainter">
-              รวม{" "}
-              {Number(z.rows) > 0 && Number(z.cols) > 0
-                ? (Number(z.rows) * Number(z.cols)).toLocaleString("en-US")
-                : "—"}{" "}
-              ที่นั่ง
-            </div>
-          </>
-        ) : (
-          <Field label="จำนวนบัตร" className="w-[160px]">
-            <Input
-              type="number"
-              value={z.capacity}
-              onChange={(v) => onChange({ capacity: v })}
-              placeholder="500"
-            />
-          </Field>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TypeTab({ on, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      className="px-3 py-[10px] font-medium transition-colors"
-      style={{
-        background: on ? "#7c3aed" : "#fff",
-        color: on ? "#fff" : "#71717a",
-      }}
-    >
-      {children}
-    </button>
   );
 }
 
